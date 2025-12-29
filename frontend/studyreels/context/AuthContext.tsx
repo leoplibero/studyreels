@@ -32,8 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setUser(response.data);
       setToken(response.token);
-
-      // Armazenar token de forma segura
+      
       await SecureStore.setItemAsync("authToken", response.token);
     } catch (error) {
       throw error;
@@ -55,7 +54,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(response.data);
       setToken(response.token);
 
-      // Armazenar token de forma segura
       await SecureStore.setItemAsync("authToken", response.token);
     } catch (error) {
       throw error;

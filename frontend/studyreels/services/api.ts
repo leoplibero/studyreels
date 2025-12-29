@@ -80,3 +80,170 @@ export const loginUser = async (data: LoginData): Promise<AuthResponse> => {
     throw error;
   }
 };
+
+// Videos
+export interface Video {
+  _id: string;
+  title: string;
+  description: string;
+  url: string;
+  teacher: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  subject: string;
+  likes: string[];
+  createdAt: string;
+}
+
+export interface FeedResponse {
+  items: Video[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+export const getFeed = async (page = 1, limit = 10, subject = ""): Promise<FeedResponse> => {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    if (subject) params.append("subject", subject);
+
+    const response = await fetch(`${API_URL}/videos?${params}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Erro ao carregar feed");
+    }
+
+    return result.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const likeVideo = async (videoId: string, token: string) => {
+  try {
+    const response = await fetch(`${API_URL}/videos/${videoId}/like`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Erro ao curtir vídeo");
+    }
+
+    return result.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Quiz
+export interface Quiz {
+  _id: string;
+  video: string;
+  question: string;
+  options: string[];
+  correctAnswer: string;
+}
+
+export interface QuizAnswerResponse {
+  correct: boolean;
+  message: string;
+}
+
+export const getQuizForVideo = async (videoId: string): Promise<Quiz> => {
+  try {
+    const response = await fetch(`${API_URL}/quizzes/video/${videoId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Erro ao carregar quiz");
+    }
+
+    return result.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const answerQuiz = async (quizId: string, answer: string, token: string): Promise<QuizAnswerResponse> => {
+  try {
+    const response = await fetch(`${API_URL}/quizzes/${quizId}/answer`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ answer }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Erro ao responder quiz");
+    }
+
+    return result.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Ranking
+export interface RankingUser {
+  _id: string;
+  name: string;
+  email: string;
+  points: number;
+  quizzesCompleted: number;
+}
+
+export interface RankingResponse {
+  users: RankingUser[];
+}
+
+export const getRanking = async (): Promise<RankingResponse> => {
+  try {
+    const response = await fetch(`${API_URL}/ranking`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Erro ao carregar ranking");
+    }
+
+    return result.data;
+  } catch (error) {
+    throw error;
+  }
+};
