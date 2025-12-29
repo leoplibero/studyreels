@@ -6,6 +6,8 @@ import rankingRoutes from "./rankingRoutes.js";
 
 const router = Router();
 
+router.use ("/ping", (req, res) => res.send("pong"));
+
 router.use("/auth", authRoutes);
 router.use("/videos", videoRoutes);
 router.use("/quizzes", quizRoutes);

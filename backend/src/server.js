@@ -9,27 +9,21 @@ dotenv.config();
 
 const app = express();
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
-
-// Conexão MongoDB
-const mongoUri = process.env.MONGO_URI;
+const connect = process.env.STRING_CONNECTION_DB || "mongodb://localhost:27017/studyreels";
 mongoose
-  .connect(mongoUri, { autoIndex: true })
+  .connect(connect, { autoIndex: true })
   .then(() => console.log("✅ MongoDB conectado"))
   .catch((err) => console.error("❌ Erro MongoDB:", err));
 
-// Healthcheck
 app.get("/", (req, res) => {
   res.json({ success: true, message: "StudyReels API Running" });
 });
 
-// Rotas principais
 app.use("/api", router);
 
-// Fallback 404
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Rota não encontrada" });
 });

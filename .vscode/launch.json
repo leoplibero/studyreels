@@ -4,11 +4,13 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug Backend",
+            "name": "Debug Backend StudyReels",
             "program": "${workspaceFolder}/backend/src/server.js",
-            "restart": true,
-            "console": "integratedTerminal",
-            "skipFiles": ["<node_internals>/**"]
+            "skipFiles": ["<node_internals>/**"],
+            "env": {
+                "JWT_SECRET": "studyreelsadm",
+                "STRING_CONNECTION_DB": "mongodb://localhost:27017/studyreels"
+            }
         }
     ]
 }
