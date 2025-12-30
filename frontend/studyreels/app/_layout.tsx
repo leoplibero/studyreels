@@ -1,146 +1,43 @@
-import { Stack, Tabs } from "expo-router";
-import { AuthProvider } from "../context/AuthContext";
-import { useAuth } from "../context/AuthContext";
-import { ActivityIndicator, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-
-function RootLayoutNav() {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#19C6D1" />
-      </View>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <Stack>
-        <Stack.Screen 
-          name="login" 
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen 
-          name="cadastro" 
-          options={{ headerShown: false }}
-        />
-      </Stack>
-    );
-  }
-
-  return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: "#fff",
-        tabBarInactiveTintColor: "#fff",
-        tabBarStyle: {
-          backgroundColor: "#1a1a2e",
-          borderTopWidth: 0,
-          paddingVertical: 10,
-          paddingBottom: 12,
-          height: 70,
-        },
-        headerShown: false,
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "700",
-          marginTop: 4,
-        },
-        tabBarIconStyle: {
-          marginBottom: 2,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="feed"
-        options={{
-          title: "Feed",
-          tabBarIcon: ({ color, focused }) => (
-            <View
-              style={{
-                width: 50,
-                height: 50,
-                borderRadius: 12,
-                backgroundColor: focused ? "#00BCD4" : "transparent",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <MaterialCommunityIcons
-                name="play-circle"
-                size={28}
-                color={focused ? "#fff" : "#888"}
-              />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="ranking"
-        options={{
-          title: "Ranking",
-          tabBarIcon: ({ color, focused }) => (
-            <View
-              style={{
-                width: 50,
-                height: 50,
-                borderRadius: 12,
-                backgroundColor: focused ? "#9C27B0" : "transparent",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <MaterialCommunityIcons
-                name="trophy"
-                size={28}
-                color={focused ? "#fff" : "#888"}
-              />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Perfil",
-          tabBarIcon: ({ color, focused }) => (
-            <View
-              style={{
-                width: 50,
-                height: 50,
-                borderRadius: 12,
-                backgroundColor: focused ? "#FF6B6B" : "transparent",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <MaterialCommunityIcons
-                name="account-circle"
-                size={28}
-                color={focused ? "#fff" : "#888"}
-              />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Group
-        screenOptions={{
-          href: null,
-          tabBarStyle: { display: "none" },
-        }}
-      >
-        <Tabs.Screen name="quiz/[id]" />
-      </Tabs.Group>
-    </Tabs>
-  );
-}
+import { Stack, useRouter, useSegments } from "expo-router";
+import { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function RootLayout() {
+  const router = useRouter();
+  const segments = useSegments();
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+      const inAuthGroup = segments[0] === "(tabs)";
+
+      if (!token && inAuthGroup) {
+        router.replace("/login");
+      } else if (token && !inAuthGroup && segments[0] !== "quiz") {
+        router.replace("/(tabs)/feed");
+      }
+    } catch (error) {
+      console.error("Erro ao verificar autenticação:", error);
+    } finally {
+      setIsReady(true);
+    }
+  };
+
+  if (!isReady) {
+    return null; 
+  }
+
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="login" />
+      <Stack.Screen name="cadastro" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="quiz/[id]" />
+    </Stack>
   );
 }

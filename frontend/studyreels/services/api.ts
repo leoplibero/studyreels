@@ -1,5 +1,21 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+
 // Configuração da API
-const API_URL = "http://localhost:4000/api";
+// Use o IP da sua máquina ao invés de localhost para testar no Expo Go
+// Para desenvolvimento web/emulador, use: http://localhost:4000/api
+const API_URL = "http://192.168.0.5:4000/api";
+
+// Função auxiliar para tratar erros de autenticação
+const handleAuthError = async (status: number) => {
+  if (status === 401) {
+    // Token expirado ou inválido
+    await AsyncStorage.removeItem("authToken");
+    await AsyncStorage.removeItem("userId");
+    router.replace("/login");
+    throw new Error("Sessão expirada. Faça login novamente.");
+  }
+};
 
 interface RegisterData {
   name: string;
@@ -81,6 +97,32 @@ export const loginUser = async (data: LoginData): Promise<AuthResponse> => {
   }
 };
 
+export const getMe = async (token: string) => {
+  try {
+    const response = await fetch(`${API_URL}/auth/me`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.status === 401) {
+      await handleAuthError(401);
+    }
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Erro ao carregar dados do usuário");
+    }
+
+    return result.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Videos
 export interface Video {
   _id: string;
@@ -134,6 +176,33 @@ export const getFeed = async (page = 1, limit = 10, subject = ""): Promise<FeedR
   }
 };
 
+export const createVideo = async (data: { title: string; description: string; videoUrl: string; subject: string }, token: string) => {
+  try {
+    const response = await fetch(`${API_URL}/videos`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (response.status === 401) {
+      await handleAuthError(401);
+    }
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Erro ao criar vídeo");
+    }
+
+    return result.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const likeVideo = async (videoId: string, token: string) => {
   try {
     const response = await fetch(`${API_URL}/videos/${videoId}/like`, {
@@ -143,6 +212,10 @@ export const likeVideo = async (videoId: string, token: string) => {
         Authorization: `Bearer ${token}`,
       },
     });
+
+    if (response.status === 401) {
+      await handleAuthError(401);
+    }
 
     const result = await response.json();
 
@@ -202,6 +275,10 @@ export const answerQuiz = async (quizId: string, answer: string, token: string):
       body: JSON.stringify({ answer }),
     });
 
+    if (response.status === 401) {
+      await handleAuthError(401);
+    }
+
     const result = await response.json();
 
     if (!response.ok) {
@@ -218,9 +295,8 @@ export const answerQuiz = async (quizId: string, answer: string, token: string):
 export interface RankingUser {
   _id: string;
   name: string;
-  email: string;
-  points: number;
-  quizzesCompleted: number;
+  xp: number;
+  level: number;
 }
 
 export interface RankingResponse {

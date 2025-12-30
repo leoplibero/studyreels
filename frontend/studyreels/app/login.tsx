@@ -1,12 +1,13 @@
 import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { router } from "expo-router";
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { loginUser } from "../services/api";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, loading } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -14,12 +15,19 @@ export default function Login() {
       return;
     }
 
+    setLoading(true);
     try {
-      await login(email, password);
-      // Navegar para a tela principal após login bem-sucedido
+      const response = await loginUser({ email, password });
+      
+      await AsyncStorage.setItem("authToken", response.token);
+      await AsyncStorage.setItem("userId", response.data.id);
+      
+      Alert.alert("Sucesso", "Login realizado com sucesso!");
       router.replace("/feed");
     } catch (error: any) {
       Alert.alert("Erro no Login", error.message || "Falha ao fazer login");
+    } finally {
+      setLoading(false);
     }
   };
   return (

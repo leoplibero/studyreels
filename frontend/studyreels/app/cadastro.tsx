@@ -1,14 +1,15 @@
 import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { router } from "expo-router";
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { registerUser } from "../services/api";
 
 export default function Cadastro() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const { register, loading } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -21,12 +22,19 @@ export default function Cadastro() {
       return;
     }
 
+    setLoading(true);
     try {
-      await register(name, email, password, confirmPassword);
+      const response = await registerUser({ name, email, password, confirmPassword });
+      
+      await AsyncStorage.setItem("authToken", response.token);
+      await AsyncStorage.setItem("userId", response.data.id);
+      
       Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
       router.replace("/feed");
     } catch (error: any) {
       Alert.alert("Erro no Cadastro", error.message || "Falha ao registrar");
+    } finally {
+      setLoading(false);
     }
   };
   return (

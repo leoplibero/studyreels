@@ -1,15 +1,17 @@
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Alert } from "react-native";
-import { router } from "expo-router";
-import { useState, useEffect } from "react";
-import { getRanking, RankingUser } from "../services/api";
+import { useState, useCallback } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { getRanking, RankingUser } from "../../services/api";
 
 export default function RankingScreen() {
   const [users, setUsers] = useState<RankingUser[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  useFocusEffect(
+  useCallback(() => {
     loadRanking();
-  }, []);
+  }, [])
+);
 
   const loadRanking = async () => {
     try {
@@ -45,16 +47,13 @@ export default function RankingScreen() {
           <Text style={styles.userName} numberOfLines={1}>
             {item.name}
           </Text>
-          <Text style={styles.email} numberOfLines={1}>
-            {item.email}
-          </Text>
         </View>
       </View>
 
       <View style={styles.rankingRight}>
-        <Text style={styles.points}>{item.points}</Text>
-        <Text style={styles.pointsLabel}>pts</Text>
-        <Text style={styles.quizzes}>{item.quizzesCompleted} quizzes</Text>
+        <Text style={styles.xp}>{item.xp}</Text>
+        <Text style={styles.xpLabel}>XP</Text>
+        <Text style={styles.level}>Nível {item.level}</Text>
       </View>
     </View>
   );
@@ -71,11 +70,7 @@ export default function RankingScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backArrow}>← Voltar</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>🏆 Ranking</Text>
-        <View style={{ width: 80 }} />
+        <Text style={styles.headerTitle}>Ranking</Text>
       </View>
 
       <FlatList
@@ -106,23 +101,17 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 20,
+    paddingTop: 48,
+    paddingBottom: 12,
     backgroundColor: "#f5f5f5",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  backArrow: {
-    fontSize: 16,
-    color: "#19C6D1",
-    fontWeight: "bold",
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#333",
+    color: "#19C6D1",
   },
   listContent: {
     paddingHorizontal: 16,
@@ -176,21 +165,21 @@ const styles = StyleSheet.create({
   rankingRight: {
     alignItems: "center",
   },
-  points: {
+  xp: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#19C6D1",
     marginBottom: 2,
   },
-  pointsLabel: {
+  xpLabel: {
     fontSize: 11,
     color: "#666",
     fontWeight: "600",
     marginBottom: 4,
   },
-  quizzes: {
+  level: {
     fontSize: 11,
     color: "#999",
-    fontStyle: "italic",
+    fontWeight: "600",
   },
 });

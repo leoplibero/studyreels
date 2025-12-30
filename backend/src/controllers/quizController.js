@@ -2,9 +2,8 @@ import { getQuizByVideo, answerQuiz } from "../services/quizService.js";
 
 export async function getQuizForVideoController(req, res) {
   try {
-    const { id } = req.params; // video id
+    const { id } = req.params;
     const quiz = await getQuizByVideo(id);
-    // Não expor resposta correta
     const safe = { id: quiz._id, question: quiz.question, options: quiz.options, xpReward: quiz.xpReward };
     return res.json({ success: true, data: safe });
   } catch (err) {

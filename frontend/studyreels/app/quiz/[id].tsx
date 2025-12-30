@@ -1,12 +1,10 @@
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, ScrollView } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useState, useEffect } from "react";
-import { useAuth } from "../../context/AuthContext";
-import { getQuizForVideo, answerQuiz, Quiz } from "../../services/api";
+import { getQuizForVideo, Quiz } from "../../services/api";
 
 export default function QuizScreen() {
   const { id } = useLocalSearchParams();
-  const { token } = useAuth();
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -34,24 +32,16 @@ export default function QuizScreen() {
     }
   };
 
-  const handleAnswerSubmit = async () => {
-    if (!selectedAnswer || !quiz || !token) return;
-
-    try {
-      setSubmitting(true);
-      const response = await answerQuiz(quiz._id, selectedAnswer, token);
-      setIsCorrect(response.correct);
-      setAnswered(true);
-      
-      if (response.correct) {
-        Alert.alert("Parabéns! 🎉", response.message);
-      } else {
-        Alert.alert("Resposta Incorreta", response.message);
-      }
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao responder quiz");
-    } finally {
-      setSubmitting(false);
+  const handleAnswerSubmit = () => {
+    if (!selectedAnswer || !quiz) return;
+    
+    setAnswered(true);
+    setIsCorrect(selectedAnswer === quiz.correctAnswer);
+    
+    if (selectedAnswer === quiz.correctAnswer) {
+      Alert.alert("Parabéns! 🎉", "Resposta correta!");
+    } else {
+      Alert.alert("Resposta Incorreta", "Tente novamente!");
     }
   };
 

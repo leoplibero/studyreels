@@ -1,15 +1,12 @@
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Alert } from "react-native";
-import { useAuth } from "../context/AuthContext";
+import { View, Text, Image, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Alert } from "react-native";
 import { router } from "expo-router";
 import { useState, useEffect } from "react";
-import { getFeed, likeVideo, Video } from "../services/api";
+import { getFeed, Video } from "../../services/api";
 
 export default function FeedScreen() {
-  const { token } = useAuth();
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [likedVideos, setLikedVideos] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadFeed();
@@ -27,30 +24,8 @@ export default function FeedScreen() {
     }
   };
 
-  const handleLike = async (videoId: string) => {
-    if (!token) return;
-
-    try {
-      await likeVideo(videoId, token);
-      
-      if (likedVideos.has(videoId)) {
-        likedVideos.delete(videoId);
-      } else {
-        likedVideos.add(videoId);
-      }
-      setLikedVideos(new Set(likedVideos));
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao curtir vídeo");
-    }
-  };
-
   const handleWatchVideo = (videoId: string) => {
     router.push(`/quiz/${videoId}`);
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    router.replace("/login");
   };
 
   const renderVideoItem = ({ item }: { item: Video }) => (
@@ -63,17 +38,24 @@ export default function FeedScreen() {
       <Text style={styles.videoDescription} numberOfLines={2}>{item.description}</Text>
 
       <View style={styles.videoFooter}>
-        <TouchableOpacity
-          style={[styles.likeButton, likedVideos.has(item._id) && styles.likeButtonActive]}
-          onPress={() => handleLike(item._id)}
-        >
-          <Text style={styles.likeButtonText}>❤️ {item.likes.length}</Text>
-        </TouchableOpacity>
+        <View style={styles.likesContainer}>
+          <Image
+            source={require("../../assets/images/like.png")}
+            style={styles.likeIcon}
+            resizeMode="contain"
+          />
+          <Text style={styles.likesText}>{item.likes.length} curtidas</Text>
+        </View>
 
         <TouchableOpacity
           style={styles.watchButton}
           onPress={() => handleWatchVideo(item._id)}
         >
+          <Image
+            source={require("../../assets/images/quiz.png")}
+            style={styles.quizIcon}
+            resizeMode="contain"
+          />
           <Text style={styles.watchButtonText}>Assistir & Quiz</Text>
         </TouchableOpacity>
       </View>
@@ -121,7 +103,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 48,
     paddingBottom: 12,
     backgroundColor: "#f5f5f5",
   },
@@ -168,6 +150,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
+  likesContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  likeIcon: {
+    width: 20,
+    height: 20,
+  },
+  likesText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#333",
+  },
   likeButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -187,10 +183,18 @@ const styles = StyleSheet.create({
   },
   watchButton: {
     flex: 1,
+    flexDirection: "row",
     paddingVertical: 10,
+    paddingHorizontal: 12,
     backgroundColor: "#19C6D1",
     borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  quizIcon: {
+    width: 18,
+    height: 18,
   },
   watchButtonText: {
     color: "#fff",

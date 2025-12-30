@@ -30,7 +30,7 @@ export async function answerQuiz({ quizId, userId, answerIndex }) {
 }
 
 function calculateLevel(xp) {
-  // Regra simples: a cada 100 XP sobe 1 nível
+  // A cada 200 XP sobe 1 nível (equivalente a 4 quizzes acertados)
   // Nível mínimo 1
-  return Math.max(1, Math.floor(Number(xp) / 100) + 1);
+  return Math.max(1, Math.floor(Number(xp) / 200) + 1);
 }
