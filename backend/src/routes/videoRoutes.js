@@ -5,7 +5,7 @@ import { requireAuth, requireRole } from "../middlewares/authMiddleware.js";
 const router = Router();
 
 router.get("/", getFeedController);
-router.post("/", requireAuth, requireRole("teacher"), createVideoController);
+router.post("/", requireAuth, requireRole("teacher", "admin"), createVideoController);
 router.post("/:id/like", requireAuth, likeVideoController);
 
 export default router;
