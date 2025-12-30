@@ -1,10 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 
-// Configuração da API
-// Use o IP da sua máquina ao invés de localhost para testar no Expo Go
-// Para desenvolvimento web/emulador, use: http://localhost:4000/api
-const API_URL = "http://192.168.0.5:4000/api";
+// Configuração da API (defina em EXPO_PUBLIC_API_URL no .env para evitar expor IP)
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 // Função auxiliar para tratar erros de autenticação
 const handleAuthError = async (status: number) => {
