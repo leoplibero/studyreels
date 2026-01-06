@@ -1,13 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 
-// Configuração da API (defina em EXPO_PUBLIC_API_URL no .env para evitar expor IP)
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
-// Função auxiliar para tratar erros de autenticação
 const handleAuthError = async (status: number) => {
   if (status === 401) {
-    // Token expirado ou inválido
     await AsyncStorage.removeItem("authToken");
     await AsyncStorage.removeItem("userId");
     router.replace("/login");
@@ -40,7 +37,6 @@ interface AuthResponse {
 
 export const registerUser = async (data: RegisterData): Promise<AuthResponse> => {
   try {
-    // Validar senha
     if (data.password !== data.confirmPassword) {
       throw new Error("As senhas não coincidem");
     }
