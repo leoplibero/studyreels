@@ -1,4 +1,14 @@
-import { getQuizByVideo, answerQuiz } from "../services/quizService.js";
+import { createQuiz, getQuizByVideo, answerQuiz } from "../services/quizService.js";
+
+export async function createQuizController(req, res) {
+  try {
+    const payload = req.body;
+    const quiz = await createQuiz(payload);
+    return res.status(201).json({ success: true, data: quiz });
+  } catch (err) {
+    return res.status(400).json({ success: false, message: err.message });
+  }
+}
 
 export async function getQuizForVideoController(req, res) {
   try {

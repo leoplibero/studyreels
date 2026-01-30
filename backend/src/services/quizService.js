@@ -2,6 +2,28 @@ import Quiz from "../models/Quiz.js";
 import QuizResult from "../models/QuizResult.js";
 import User from "../models/User.js";
 
+export async function createQuiz(payload) {
+  const { video, question, options, correctAnswer, xpReward } = payload;
+  
+  if (!video || !question || !options || options.length !== 4 || correctAnswer === undefined) {
+    throw new Error("Campos obrigatórios: video, question, options (4 items), correctAnswer");
+  }
+
+  if (Number(correctAnswer) < 0 || Number(correctAnswer) > 3) {
+    throw new Error("correctAnswer deve ser entre 0 e 3");
+  }
+
+  const quiz = await Quiz.create({
+    video,
+    question,
+    options,
+    correctAnswer: Number(correctAnswer),
+    xpReward: xpReward || 50
+  });
+
+  return quiz;
+}
+
 export async function getQuizByVideo(videoId) {
   const quiz = await Quiz.findOne({ video: videoId });
   if (!quiz) throw new Error("Quiz não encontrado para este vídeo");
@@ -30,7 +52,5 @@ export async function answerQuiz({ quizId, userId, answerIndex }) {
 }
 
 function calculateLevel(xp) {
-  // A cada 200 XP sobe 1 nível (equivalente a 4 quizzes acertados)
-  // Nível mínimo 1
   return Math.max(1, Math.floor(Number(xp) / 200) + 1);
 }

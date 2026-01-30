@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "studyreelsadm_default_key";
+const JWT_SECRET = process.env.JWT_SECRET || "studyreelsadm";
 
 export async function register({ name, email, password, role = "student" }) {
   const exists = await User.findOne({ email });
@@ -11,18 +11,24 @@ export async function register({ name, email, password, role = "student" }) {
   const hashed = await bcrypt.hash(password, 10);
   const user = await User.create({ name, email, password: hashed, role, xp: 0, level: 1 });
 
-  const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
+  const token = jwt.sign({ i: user._id, r: user.role }, JWT_SECRET, { expiresIn: "24h" });
+  user.token = token;
+  await user.save();
+  
   return { user: sanitizeUser(user), token };
 }
 
 export async function login({ email, password }) {
   const user = await User.findOne({ email });
-  if (!user) throw new Error("Credenciais inválidas");
+  if (!user) throw new Error("Credenciais inválidos");
 
   const ok = await bcrypt.compare(password, user.password);
-  if (!ok) throw new Error("Credenciais inválidas");
+  if (!ok) throw new Error("Credenciais inválidos");
 
-  const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
+  const token = jwt.sign({ i: user._id, r: user.role }, JWT_SECRET, { expiresIn: "24h" });
+  user.token = token;
+  await user.save();
+  
   return { user: sanitizeUser(user), token };
 }
 

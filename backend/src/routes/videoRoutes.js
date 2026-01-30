@@ -1,11 +1,10 @@
 import { Router } from "express";
-import { getFeedController, createVideoController, likeVideoController } from "../controllers/videoController.js";
-import { requireAuth, requireRole } from "../middlewares/authMiddleware.js";
+import { getFeedController, createVideoController } from "../controllers/videoController.js";
+import { requireAuth } from "../middlewares/authMiddleware.js";
 
 const router = Router();
 
 router.get("/", getFeedController);
-router.post("/", requireAuth, requireRole("teacher", "admin"), createVideoController);
-router.post("/:id/like", requireAuth, likeVideoController);
+router.post("/", requireAuth, createVideoController);
 
 export default router;

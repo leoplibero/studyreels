@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     role: { type: String, enum: ["student", "teacher","admin"], default: "student" },
     xp: { type: Number, default: 0 },
-    level: { type: Number, default: 1 }
+    level: { type: Number, default: 1 },
+    token: { type: String, default: null }
   },
   { timestamps: { createdAt: true, updatedAt: true } }
 );

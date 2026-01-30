@@ -1,22 +1,28 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "studyreelsadm_default_key";
+const JWT_SECRET = process.env.JWT_SECRET || "studyreelsadm";
 
 export async function requireAuth(req, res, next) {
   try {
-    const header = req.headers.authorization || "";
-    const token = header.startsWith("Bearer ") ? header.substring(7) : null;
-    if (!token) return res.status(401).json({ success: false, message: "Token ausente" });
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader) {
+      return res.status(401).json({ success: false, message: "Token ausente" });
+    }
 
+    // Remove "Bearer " prefix se existir
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+    
     const payload = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(payload.id);
-    if (!user) return res.status(401).json({ success: false, message: "Usuário inválido" });
+    const user = await User.findById(payload.i);
+    if (!user) {
+      return res.status(401).json({ success: false, message: "Usuário inválido" });
+    }
 
     req.user = { id: user._id, role: user.role };
     next();
   } catch (err) {
-    return res.status(401).json({ success: false, message: "Token inválido" });
+    return res.status(401).json({ success: false, message: "Token inválido ou expirado" });
   }
 }
 
