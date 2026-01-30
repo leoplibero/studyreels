@@ -1,5 +1,7 @@
 # Environment files
 backend/.env
+frontend/.env
+frontend/.expo/
 
 # Node
 **/node_modules/
