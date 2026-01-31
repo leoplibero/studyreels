@@ -1,10 +1,11 @@
 import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { registerUser } from "../services/api";
 
 export default function Cadastro() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
