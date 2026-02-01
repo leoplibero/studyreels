@@ -131,6 +131,13 @@ export interface Video {
   subject: string;
   likes: string[];
   createdAt: string;
+  quiz?: {
+    _id: string;
+    question: string;
+    options: string[];
+    correctAnswer: string | number;
+    xpReward?: number;
+  } | null;
 }
 
 export interface FeedResponse {
@@ -143,13 +150,14 @@ export interface FeedResponse {
   };
 }
 
-export const getFeed = async (page = 1, limit = 10, subject = ""): Promise<FeedResponse> => {
+export const getFeed = async (page = 1, limit = 10, subject = "", withQuiz = false): Promise<FeedResponse> => {
   try {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
     });
     if (subject) params.append("subject", subject);
+    if (withQuiz) params.append("withQuiz", "true");
 
     const response = await fetch(`${API_URL}/videos?${params}`, {
       method: "GET",
@@ -277,6 +285,33 @@ export const answerQuiz = async (quizId: string, answer: string, token: string):
 
     if (!response.ok) {
       throw new Error(result.message || "Erro ao responder quiz");
+    }
+
+    return result.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const createQuiz = async (data: { videoId: string; question: string; options: string[]; correctAnswer: number; xpReward?: number }, token: string) => {
+  try {
+    const response = await fetch(`${API_URL}/quizzes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (response.status === 401) {
+      await handleAuthError(401);
+    }
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Erro ao criar quiz");
     }
 
     return result.data;

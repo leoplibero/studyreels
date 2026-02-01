@@ -10,11 +10,28 @@ export default function ManageScreen() {
   const [videoUrl, setVideoUrl] = useState("");
   const [subject, setSubject] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // Quiz form states
+  const [quizQuestion, setQuizQuestion] = useState("");
+  const [quizOptions, setQuizOptions] = useState(["", "", "", ""]);
+  const [quizCorrectAnswer, setQuizCorrectAnswer] = useState(0);
+  const [quizXpReward, setQuizXpReward] = useState("50");
 
   const handleCreateVideo = async () => {
     try {
       if (!title.trim() || !videoUrl.trim() || !subject.trim()) {
-        Alert.alert("Erro", "Preencha todos os campos obrigatórios");
+        Alert.alert("Erro", "Preencha todos os campos obrigatórios do vídeo");
+        return;
+      }
+
+      if (!quizQuestion.trim() || quizOptions.some(opt => !opt.trim())) {
+        Alert.alert("Erro", "Preencha a pergunta e todas as opções do quiz");
+        return;
+      }
+
+      const xpValue = parseInt(quizXpReward);
+      if (isNaN(xpValue) || xpValue <= 0) {
+        Alert.alert("Erro", "O valor de XP deve ser um número positivo");
         return;
       }
 
@@ -26,19 +43,33 @@ export default function ManageScreen() {
         return;
       }
 
-      await createVideo({
+      const videoData: any = {
         title: title.trim(),
         description: description.trim(),
         videoUrl: videoUrl.trim(),
         subject: subject.trim(),
-      }, token);
+      };
 
-      Alert.alert("Sucesso", "Vídeo adicionado com sucesso!");
+      videoData.quiz = {
+        question: quizQuestion.trim(),
+        options: quizOptions.map(opt => opt.trim()),
+        correctAnswer: quizCorrectAnswer,
+        xpReward: parseInt(quizXpReward),
+      };
+
+      await createVideo(videoData, token);
+
+      Alert.alert("Sucesso", "Vídeo e quiz criados com sucesso!");
       
+      // Reset form
       setTitle("");
       setDescription("");
       setVideoUrl("");
       setSubject("");
+      setQuizQuestion("");
+      setQuizOptions(["", "", "", ""]);
+      setQuizCorrectAnswer(0);
+      setQuizXpReward("50");
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Erro ao adicionar vídeo");
     } finally {
@@ -54,8 +85,8 @@ export default function ManageScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Adicionar Novo Vídeo</Text>
-          
+          <Text style={styles.cardTitle}>Adicionar Novo Vídeo e Quiz</Text>
+
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Título *</Text>
             <TextInput
@@ -104,6 +135,77 @@ export default function ManageScreen() {
             />
           </View>
 
+          <View style={styles.quizSection}>
+            <Text style={styles.sectionTitle}>📝 Dados do Quiz</Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Pergunta do Quiz *</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Digite a pergunta do quiz"
+                value={quizQuestion}
+                onChangeText={setQuizQuestion}
+                placeholderTextColor="#999"
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+
+            {quizOptions.map((option, index) => {
+              const optionLetter = String.fromCharCode(65 + index); // A, B, C, D
+              return (
+                <View key={index} style={styles.inputGroup}>
+                  <View style={styles.optionHeader}>
+                    <Text style={styles.label}>Opção {optionLetter} *</Text>
+                    <TouchableOpacity
+                      style={[
+                        styles.correctButton,
+                        quizCorrectAnswer === index && styles.correctButtonActive
+                      ]}
+                      onPress={() => setQuizCorrectAnswer(index)}
+                    >
+                      <Ionicons
+                        name={quizCorrectAnswer === index ? "checkmark-circle" : "checkmark-circle-outline"}
+                        size={20}
+                        color={quizCorrectAnswer === index ? "#4CAF50" : "#999"}
+                      />
+                      <Text style={[
+                        styles.correctButtonText,
+                        quizCorrectAnswer === index && styles.correctButtonTextActive
+                      ]}>
+                        {quizCorrectAnswer === index ? "Correta" : "Marcar como correta"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TextInput
+                    style={styles.input}
+                    placeholder={`Digite a opção ${optionLetter}`}
+                    value={option}
+                    onChangeText={(text) => {
+                      const newOptions = [...quizOptions];
+                      newOptions[index] = text;
+                      setQuizOptions(newOptions);
+                    }}
+                    placeholderTextColor="#999"
+                  />
+                </View>
+              );
+            })}
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Recompensa de XP *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ex: 50"
+                value={quizXpReward}
+                onChangeText={setQuizXpReward}
+                placeholderTextColor="#999"
+                keyboardType="numeric"
+              />
+              <Text style={styles.helperText}>Quantidade de XP que o aluno ganhará ao acertar</Text>
+            </View>
+          </View>
+
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleCreateVideo}
@@ -111,7 +213,7 @@ export default function ManageScreen() {
           >
             <Ionicons name="add-circle" size={20} color="#fff" />
             <Text style={styles.buttonText}>
-              {loading ? "Adicionando..." : "Adicionar Vídeo"}
+              {loading ? "Adicionando..." : "Adicionar Vídeo e Quiz"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -190,6 +292,46 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: "top",
   },
+  quizSection: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: "#f5f0ff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#9C27B0",
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#9C27B0",
+    marginBottom: 16,
+  },
+  optionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  correctButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: "#f0f0f0",
+  },
+  correctButtonActive: {
+    backgroundColor: "#e8f5e9",
+  },
+  correctButtonText: {
+    fontSize: 12,
+    color: "#999",
+  },
+  correctButtonTextActive: {
+    color: "#4CAF50",
+    fontWeight: "600",
+  },
   button: {
     flexDirection: "row",
     backgroundColor: "#19C6D1",
@@ -198,7 +340,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    marginTop: 8,
+    marginTop: 16,
   },
   buttonDisabled: {
     backgroundColor: "#999",
@@ -215,11 +357,18 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
     alignItems: "flex-start",
+    marginBottom: 16,
   },
   infoText: {
     flex: 1,
     fontSize: 13,
     color: "#666",
     lineHeight: 20,
+  },
+  helperText: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
+    fontStyle: "italic",
   },
 });
