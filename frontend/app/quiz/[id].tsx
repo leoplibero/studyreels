@@ -1,16 +1,18 @@
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, ScrollView } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useState, useEffect } from "react";
-import { getQuizForVideo, Quiz } from "../../services/api";
+import { getQuizForVideo, answerQuiz, Quiz } from "../../services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function QuizScreen() {
   const { id } = useLocalSearchParams();
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [xpEarned, setXpEarned] = useState(0);
 
   useEffect(() => {
     loadQuiz();
@@ -20,10 +22,12 @@ export default function QuizScreen() {
     try {
       setLoading(true);
       const quizData = await getQuizForVideo(id as string);
+      console.log("Quiz loaded:", JSON.stringify(quizData, null, 2));
       setQuiz(quizData);
       setSelectedAnswer(null);
       setAnswered(false);
       setIsCorrect(null);
+      setXpEarned(0);
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Erro ao carregar quiz");
       router.back();
@@ -32,16 +36,46 @@ export default function QuizScreen() {
     }
   };
 
-  const handleAnswerSubmit = () => {
-    if (!selectedAnswer || !quiz) return;
+  const handleAnswerSubmit = async () => {
+    if (selectedAnswer === null || !quiz) return;
     
-    setAnswered(true);
-    setIsCorrect(selectedAnswer === quiz.correctAnswer);
-    
-    if (selectedAnswer === quiz.correctAnswer) {
-      Alert.alert("Parabéns! 🎉", "Resposta correta!");
-    } else {
-      Alert.alert("Resposta Incorreta", "Tente novamente!");
+    try {
+      setSubmitting(true);
+      const token = await AsyncStorage.getItem("authToken");
+      
+      if (!token) {
+        Alert.alert("Erro", "Você precisa estar logado para responder o quiz");
+        router.replace("/login");
+        return;
+      }
+
+      console.log("Submitting answer - Quiz ID:", quiz.id, "Answer index:", selectedAnswer);
+      
+      const result = await answerQuiz(quiz.id, selectedAnswer, token);
+      
+      console.log("Answer result:", result);
+      
+      setAnswered(true);
+      setIsCorrect(result.isCorrect);
+      setXpEarned(result.xpEarned);
+      
+      if (result.isCorrect) {
+        Alert.alert(
+          "Parabéns! 🎉", 
+          `Resposta correta! Você ganhou ${result.xpEarned} XP!`,
+          [{ text: "OK", onPress: () => router.back() }]
+        );
+      } else {
+        Alert.alert(
+          "Resposta Incorreta ❌",
+          `Você escolheu: ${quiz.options[selectedAnswer]}\n\nEstude mais e tente novamente!`,
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error: any) {
+      Alert.alert("Erro", error.message || "Erro ao enviar resposta");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -84,18 +118,17 @@ export default function QuizScreen() {
               key={index}
               style={[
                 styles.optionButton,
-                selectedAnswer === option && styles.optionButtonSelected,
-                answered && option === quiz.correctAnswer && styles.optionButtonCorrect,
-                answered && selectedAnswer === option && !isCorrect && styles.optionButtonWrong,
+                selectedAnswer === index && styles.optionButtonSelected,
+                answered && isCorrect && selectedAnswer === index && styles.optionButtonCorrect,
+                answered && !isCorrect && selectedAnswer === index && styles.optionButtonWrong,
               ]}
-              onPress={() => !answered && setSelectedAnswer(option)}
+              onPress={() => !answered && setSelectedAnswer(index)}
               disabled={answered}
             >
               <Text
                 style={[
                   styles.optionText,
-                  selectedAnswer === option && styles.optionTextSelected,
-                  answered && (option === quiz.correctAnswer || selectedAnswer === option) && styles.optionTextAnswer,
+                  selectedAnswer === index && styles.optionTextSelected,
                 ]}
               >
                 {option}
@@ -107,19 +140,21 @@ export default function QuizScreen() {
         {answered && (
           <View style={[styles.resultCard, isCorrect ? styles.resultCorrect : styles.resultWrong]}>
             <Text style={styles.resultText}>
-              {isCorrect ? "✓ Resposta Correta!" : "✗ Resposta Incorreta"}
+              {isCorrect ? `✓ Resposta Correta! +${xpEarned} XP` : "✗ Resposta Incorreta"}
             </Text>
-            <Text style={styles.resultDescription}>
-              A resposta correta é: {quiz.correctAnswer}
-            </Text>
+            {isCorrect && (
+              <Text style={styles.resultDescription}>
+                Você ganhou {xpEarned} pontos de experiência!
+              </Text>
+            )}
           </View>
         )}
 
         {!answered ? (
           <TouchableOpacity
-            style={[styles.submitButton, !selectedAnswer && styles.submitButtonDisabled]}
+            style={[styles.submitButton, selectedAnswer === null && styles.submitButtonDisabled]}
             onPress={handleAnswerSubmit}
-            disabled={!selectedAnswer || submitting}
+            disabled={selectedAnswer === null || submitting}
           >
             <Text style={styles.submitButtonText}>
               {submitting ? "Enviando..." : "Responder"}

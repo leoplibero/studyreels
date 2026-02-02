@@ -3,8 +3,10 @@ import { router } from "expo-router";
 import { useState, useEffect } from "react";
 import { getFeed, Video } from "../../services/api";
 
+type VideoWithLocalLikes = Video & { localLikes: number };
+
 export default function FeedScreen() {
-  const [videos, setVideos] = useState<Video[]>([]);
+  const [videos, setVideos] = useState<VideoWithLocalLikes[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
 
@@ -15,8 +17,11 @@ export default function FeedScreen() {
   const loadFeed = async () => {
     try {
       setLoading(true);
-      const response = await getFeed(page, 10);
-      setVideos(response.items);
+      const response = await getFeed(page, 10, "", true);
+      setVideos(response.items.map((item) => ({
+        ...item,
+        localLikes: item.likes?.length ?? 0,
+      })));
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Erro ao carregar feed");
     } finally {
@@ -28,24 +33,62 @@ export default function FeedScreen() {
     router.push(`/quiz/${videoId}`);
   };
 
-  const renderVideoItem = ({ item }: { item: Video }) => (
+  const handleLocalLike = (videoId: string) => {
+    setVideos((prev) =>
+      prev.map((video) =>
+        video._id === videoId
+          ? { ...video, localLikes: (video.localLikes ?? 0) + 1 }
+          : video
+      )
+    );
+  };
+
+  const getThumbnailUrl = (video: VideoWithLocalLikes) => {
+    if (video.thumbnailUrl) return video.thumbnailUrl;
+    const match = video.videoUrl?.match(/(?:v=|youtu.be\/)([A-Za-z0-9_-]{6,})/);
+    if (match?.[1]) {
+      return `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
+    }
+    return "";
+  };
+
+  const renderVideoItem = ({ item }: { item: VideoWithLocalLikes }) => (
     <View style={styles.videoCard}>
+      {getThumbnailUrl(item) ? (
+        <Image
+          source={{ uri: getThumbnailUrl(item) }}
+          style={styles.thumbnail}
+          resizeMode="cover"
+        />
+      ) : null}
+
       <View style={styles.videoHeader}>
         <Text style={styles.videoTitle} numberOfLines={2}>{item.title}</Text>
-        <Text style={styles.videoTeacher}>{item.teacher.name}</Text>
+        <View style={styles.videoMetaRow}>
+          <Text style={styles.videoTeacher}>{item.teacher.name}</Text>
+          <View style={[styles.quizBadge, item.quiz ? styles.quizBadgeActive : styles.quizBadgeInactive]}>
+            <Text style={[styles.quizBadgeText, item.quiz ? styles.quizBadgeTextActive : styles.quizBadgeTextInactive]}>
+              {item.quiz ? "Quiz disponível" : "Sem quiz"}
+            </Text>
+          </View>
+        </View>
       </View>
 
       <Text style={styles.videoDescription} numberOfLines={2}>{item.description}</Text>
 
       <View style={styles.videoFooter}>
-        <View style={styles.likesContainer}>
+        <TouchableOpacity
+          style={styles.likesContainer}
+          onPress={() => handleLocalLike(item._id)}
+          activeOpacity={0.7}
+        >
           <Image
             source={require("../../assets/images/like.png")}
             style={styles.likeIcon}
             resizeMode="contain"
           />
-          <Text style={styles.likesText}>{item.likes.length} curtidas</Text>
-        </View>
+          <Text style={styles.likesText}>{item.localLikes} curtidas</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.watchButton}
@@ -124,8 +167,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e0e0e0",
   },
+  thumbnail: {
+    width: "100%",
+    height: 180,
+    borderRadius: 10,
+    marginBottom: 12,
+    backgroundColor: "#eaeaea",
+  },
   videoHeader: {
     marginBottom: 12,
+  },
+  videoMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
   },
   videoTitle: {
     fontSize: 18,
@@ -137,6 +193,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#19C6D1",
     fontWeight: "600",
+  },
+  quizBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  quizBadgeActive: {
+    backgroundColor: "#e8f7f8",
+    borderColor: "#19C6D1",
+  },
+  quizBadgeInactive: {
+    backgroundColor: "#f0f0f0",
+    borderColor: "#ddd",
+  },
+  quizBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  quizBadgeTextActive: {
+    color: "#19C6D1",
+  },
+  quizBadgeTextInactive: {
+    color: "#999",
   },
   videoDescription: {
     fontSize: 13,

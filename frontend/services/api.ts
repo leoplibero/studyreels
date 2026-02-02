@@ -122,7 +122,8 @@ export interface Video {
   _id: string;
   title: string;
   description: string;
-  url: string;
+  videoUrl: string;
+  thumbnailUrl?: string;
   teacher: {
     _id: string;
     name: string;
@@ -135,7 +136,6 @@ export interface Video {
     _id: string;
     question: string;
     options: string[];
-    correctAnswer: string | number;
     xpReward?: number;
   } | null;
 }
@@ -233,16 +233,17 @@ export const likeVideo = async (videoId: string, token: string) => {
 
 // Quiz
 export interface Quiz {
-  _id: string;
-  video: string;
+  id: string;
+  video?: string;
   question: string;
   options: string[];
-  correctAnswer: string;
+  xpReward?: number;
 }
 
 export interface QuizAnswerResponse {
-  correct: boolean;
-  message: string;
+  isCorrect: boolean;
+  xpEarned: number;
+  resultId: string;
 }
 
 export const getQuizForVideo = async (videoId: string): Promise<Quiz> => {
@@ -266,7 +267,7 @@ export const getQuizForVideo = async (videoId: string): Promise<Quiz> => {
   }
 };
 
-export const answerQuiz = async (quizId: string, answer: string, token: string): Promise<QuizAnswerResponse> => {
+export const answerQuiz = async (quizId: string, answerIndex: number, token: string): Promise<QuizAnswerResponse> => {
   try {
     const response = await fetch(`${API_URL}/quizzes/${quizId}/answer`, {
       method: "POST",
@@ -274,7 +275,7 @@ export const answerQuiz = async (quizId: string, answer: string, token: string):
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ answer }),
+      body: JSON.stringify({ answerIndex }),
     });
 
     if (response.status === 401) {
