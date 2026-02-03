@@ -238,7 +238,7 @@ Este projeto está sob a licença ISC.
 
 ## 👥 Autores
 
-Desenvolvido com Leonardo Paciencia para revolucionar a forma de aprender através de vídeos curtos. :D
+Desenvolvido por mim (Leonardo Paciencia) para revolucionar a forma de aprender através de vídeos curtos. :D
 
 ---
 
